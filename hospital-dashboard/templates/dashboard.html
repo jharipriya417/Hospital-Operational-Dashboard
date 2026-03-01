@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospital Operational Intelligence Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">MedOps</span>
+      <span class="brand-sub">Intelligence</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#overview" class="nav-item active" onclick="showSection('overview', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </a>
+    <a href="#departments" class="nav-item" onclick="showSection('departments', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Departments
+    </a>
+    <a href="#stress" class="nav-item" onclick="showSection('stress', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Stress Index
+    </a>
+    <a href="#trends" class="nav-item" onclick="showSection('trends', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Trends
+    </a>
+    <a href="#alerts" class="nav-item" onclick="showSection('alerts', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alerts
+      {% if alert_summary.critical > 0 %}
+      <span class="badge badge-critical">{{ alert_summary.critical }}</span>
+      {% elif alert_summary.warning > 0 %}
+      <span class="badge badge-warning">{{ alert_summary.warning }}</span>
+      {% endif %}
+    </a>
+    <a href="#prediction" class="nav-item" onclick="showSection('prediction', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Prediction
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="last-updated">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Updated: {{ kpi.date }}
+    </div>
+  </div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content">
+
+  <!-- Header -->
+  <header class="top-header">
+    <div class="header-left">
+      <h1 class="page-title">Hospital Operational Intelligence</h1>
+      <p class="page-subtitle">Administrative Analytics Dashboard &mdash; {{ kpi.date }}</p>
+    </div>
+    <div class="header-right">
+      <div class="alert-badge-group">
+        {% if alert_summary.critical > 0 %}
+        <span class="header-alert critical">{{ alert_summary.critical }} Critical</span>
+        {% endif %}
+        {% if alert_summary.warning > 0 %}
+        <span class="header-alert warning">{{ alert_summary.warning }} Warnings</span>
+        {% endif %}
+        {% if alert_summary.critical == 0 and alert_summary.warning == 0 %}
+        <span class="header-alert ok">All Systems Normal</span>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== SECTION: OVERVIEW ========== -->
+  <section id="overview" class="section active">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Total Patients Today</span>
+          <span class="kpi-value">{{ kpi.total_patients }}</span>
+          <span class="kpi-sub">{{ kpi.total_discharged }} discharged</span>
+        </div>
+      </div>
+
+      <div class="kpi-card red">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Emergency Cases</span>
+          <span class="kpi-value">{{ kpi.total_emergency }}</span>
+          <span class="kpi-sub">{{ kpi.total_pending }} pending cases</span>
+        </div>
+      </div>
+
+      <div class="kpi-card {% if kpi.bed_util_pct >= 90 %}orange{% elif kpi.bed_util_pct >= 75 %}yellow{% else %}green{% endif %}">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Bed Occupancy</span>
+          <span class="kpi-value">{{ kpi.bed_util_pct }}%</span>
+          <span class="kpi-sub">{{ kpi.total_occupied }}/{{ kpi.total_beds }} beds</span>
+        </div>
+      </div>
+
+      <div class="kpi-card {% if kpi.staff_cov_pct < 75 %}red{% elif kpi.staff_cov_pct < 90 %}yellow{% else %}green{% endif %}">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Staff Coverage</span>
+          <span class="kpi-value">{{ kpi.staff_cov_pct }}%</span>
+          <span class="kpi-sub">{{ kpi.total_staff }}/{{ kpi.total_required }} required</span>
+        </div>
+      </div>
+
+      <div class="kpi-card purple">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Avg Resolution Time</span>
+          <span class="kpi-value">{{ kpi.avg_resolution }} hrs</span>
+          <span class="kpi-sub">Across all departments</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <h3>Patient Volume by Department</h3>
+          <span class="chart-badge">Today</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="patientVolumeChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Bed Utilization</h3>
+          <span class="chart-badge">Current</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="bedUtilChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Awareness Panel -->
+    <div class="awareness-panel">
+      <div class="awareness-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Administrative Awareness Panel</h3>
+      </div>
+      <div class="awareness-grid">
+        {% for stress in dept_stress[:3] %}
+        <div class="awareness-item {{ stress.status_class }}">
+          <div class="awareness-dept">{{ stress.department }}</div>
+          <div class="awareness-status">{{ stress.status }}</div>
+          <div class="awareness-index">Stress: {{ stress.stress_index }}</div>
+        </div>
+        {% endfor %}
+        <div class="awareness-item info">
+          <div class="awareness-dept">System Status</div>
+          <div class="awareness-status">
+            {% if alert_summary.critical > 0 %}Requires Attention{% else %}Operational{% endif %}
+          </div>
+          <div class="awareness-index">{{ alert_summary.total }} active alerts</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========== SECTION: DEPARTMENTS ========== -->
+  <section id="departments" class="section">
+    <div class="section-header">
+      <h2>Department Overview</h2>
+      <p>Real-time operational status across all departments</p>
+    </div>
+
+    <div class="dept-grid">
+      {% for dept in dept_overview %}
+      <div class="dept-card">
+        <div class="dept-card-header">
+          <h3 class="dept-name">{{ dept.department }}</h3>
+          <span class="dept-patients">{{ dept.patients_admitted }} patients</span>
+        </div>
+        <div class="dept-metrics">
+          <div class="dept-metric">
+            <span class="metric-label">Emergency</span>
+            <span class="metric-value red">{{ dept.emergency_cases }}</span>
+          </div>
+          <div class="dept-metric">
+            <span class="metric-label">Pending</span>
+            <span class="metric-value orange">{{ dept.pending_cases }}</span>
+          </div>
+          <div class="dept-metric">
+            <span class="metric-label">Avg Resolution</span>
+            <span class="metric-value blue">{{ dept.avg_resolution }}h</span>
+          </div>
+        </div>
+        <div class="dept-bars">
+          <div class="bar-row">
+            <span class="bar-label">Beds</span>
+            <div class="progress-bar">
+              <div class="progress-fill {% if dept.bed_util_pct >= 90 %}fill-critical{% elif dept.bed_util_pct >= 75 %}fill-warning{% else %}fill-ok{% endif %}"
+                   style="width: {{ [dept.bed_util_pct, 100]|min }}%"></div>
+            </div>
+            <span class="bar-pct">{{ dept.bed_util_pct }}%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Staff</span>
+            <div class="progress-bar">
+              <div class="progress-fill {% if dept.staff_cov_pct < 75 %}fill-critical{% elif dept.staff_cov_pct < 90 %}fill-warning{% else %}fill-ok{% endif %}"
+                   style="width: {{ [dept.staff_cov_pct, 100]|min }}%"></div>
+            </div>
+            <span class="bar-pct">{{ dept.staff_cov_pct }}%</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="charts-row mt-24">
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <h3>Resolution Time & Pending Cases</h3>
+          <span class="chart-badge">Today</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="resolutionChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Emergency vs Total Patients</h3>
+          <span class="chart-badge">Today</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="emergencyRatioChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION: STRESS INDEX ========== -->
+  <section id="stress" class="section">
+    <div class="section-header">
+      <h2>Department Stress Index</h2>
+      <p>Composite stress score based on patient-staff ratio, emergency load, and bed utilization</p>
+    </div>
+
+    <div class="stress-grid">
+      {% for s in dept_stress %}
+      <div class="stress-card {{ s.status_class }}">
+        <div class="stress-card-top">
+          <div class="stress-dept-name">{{ s.department }}</div>
+          <div class="stress-badge {{ s.status_class }}">{{ s.status }}</div>
+        </div>
+        <div class="stress-index-display">
+          <svg class="stress-gauge" viewBox="0 0 120 70">
+            <path d="M10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#e2e8f0" stroke-width="10" stroke-linecap="round"/>
+            <path d="M10 65 A 50 50 0 0 1 110 65" fill="none"
+                  stroke="{% if s.status_class == 'critical' %}#ef4444{% elif s.status_class == 'watch' %}#f59e0b{% else %}#10b981{% endif %}"
+                  stroke-width="10" stroke-linecap="round"
+                  stroke-dasharray="{{ (s.stress_index / 100) * 157 }} 157"/>
+            <text x="60" y="60" text-anchor="middle" font-size="20" font-weight="700"
+                  fill="{% if s.status_class == 'critical' %}#ef4444{% elif s.status_class == 'watch' %}#f59e0b{% else %}#10b981{% endif %}">
+              {{ s.stress_index }}
+            </text>
+          </svg>
+        </div>
+        <div class="stress-breakdown">
+          <div class="stress-factor">
+            <span class="factor-label">Patient/Staff</span>
+            <div class="factor-bar">
+              <div class="factor-fill" style="width: {{ [s.ps_score, 100]|min }}%"></div>
+            </div>
+            <span class="factor-val">{{ s.ps_score }}</span>
+          </div>
+          <div class="stress-factor">
+            <span class="factor-label">Emergency Load</span>
+            <div class="factor-bar">
+              <div class="factor-fill" style="width: {{ [s.em_score, 100]|min }}%"></div>
+            </div>
+            <span class="factor-val">{{ s.em_score }}</span>
+          </div>
+          <div class="stress-factor">
+            <span class="factor-label">Bed Utilization</span>
+            <div class="factor-bar">
+              <div class="factor-fill" style="width: {{ [s.bed_score, 100]|min }}%"></div>
+            </div>
+            <span class="factor-val">{{ s.bed_score }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="chart-card full-width mt-24">
+      <div class="chart-header">
+        <h3>Stress Index Comparison</h3>
+        <span class="chart-badge">All Departments</span>
+      </div>
+      <div class="chart-container tall">
+        <canvas id="stressCompareChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION: TRENDS ========== -->
+  <section id="trends" class="section">
+    <div class="section-header">
+      <h2>Operational Trends</h2>
+      <p>28-day historical trends across patient volume, emergency cases, and pending workload</p>
+    </div>
+
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <h3>Patient Admission Trends</h3>
+        <span class="chart-badge">28 Days</span>
+      </div>
+      <div class="chart-container tall">
+        <canvas id="admissionTrendChart"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-row mt-24">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Emergency Case Trends</h3>
+          <span class="chart-badge">28 Days</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="emergencyTrendChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Pending Cases Accumulation</h3>
+          <span class="chart-badge">28 Days</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="pendingTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION: ALERTS ========== -->
+  <section id="alerts" class="section">
+    <div class="section-header">
+      <h2>Smart Alerts & Insights</h2>
+      <p>Automated operational risk detection and early warning system</p>
+    </div>
+
+    <div class="alert-summary-row">
+      <div class="alert-summary-card critical">
+        <span class="summary-count">{{ alert_summary.critical }}</span>
+        <span class="summary-label">Critical</span>
+      </div>
+      <div class="alert-summary-card warning">
+        <span class="summary-count">{{ alert_summary.warning }}</span>
+        <span class="summary-label">Warnings</span>
+      </div>
+      <div class="alert-summary-card info">
+        <span class="summary-count">{{ alert_summary.info }}</span>
+        <span class="summary-label">Info</span>
+      </div>
+      <div class="alert-summary-card total">
+        <span class="summary-count">{{ alert_summary.total }}</span>
+        <span class="summary-label">Total Alerts</span>
+      </div>
+    </div>
+
+    <div class="alerts-list">
+      {% for alert in alerts %}
+      <div class="alert-item {{ alert.level }}">
+        <div class="alert-icon-col">
+          <span class="alert-emoji">{{ alert.icon }}</span>
+        </div>
+        <div class="alert-content">
+          <div class="alert-top-row">
+            <span class="alert-level-badge {{ alert.level }}">{{ alert.label }}</span>
+            <span class="alert-category">{{ alert.category }}</span>
+            <span class="alert-dept">{{ alert.department }}</span>
+          </div>
+          <p class="alert-message">{{ alert.message }}</p>
+        </div>
+        {% if alert.value %}
+        <div class="alert-value-col">
+          <span class="alert-value">{{ alert.value }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="no-alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <p>No active alerts. All systems operating normally.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ========== SECTION: PREDICTION ========== -->
+  <section id="prediction" class="section">
+    <div class="section-header">
+      <h2>Predictive Workload Estimation</h2>
+      <p>Next-day forecasts using trend analysis and weighted historical patterns</p>
+    </div>
+
+    <div class="prediction-grid">
+      {% for pred in predictions %}
+      <div class="prediction-card {{ pred.risk_class }}">
+        <div class="pred-header">
+          <h3 class="pred-dept">{{ pred.department }}</h3>
+          <span class="pred-risk {{ pred.risk_class }}">{{ pred.risk_level }}</span>
+        </div>
+        <div class="pred-stress-bar">
+          <div class="pred-stress-label">Predicted Stress Index</div>
+          <div class="pred-stress-track">
+            <div class="pred-stress-fill {{ pred.risk_class }}"
+                 style="width: {{ [pred.predicted_stress, 100]|min }}%"></div>
+          </div>
+          <div class="pred-stress-val">{{ pred.predicted_stress }}</div>
+        </div>
+        <div class="pred-metrics">
+          <div class="pred-metric">
+            <span class="pred-metric-label">Patients</span>
+            <span class="pred-metric-val">{{ pred.predicted_patients }}</span>
+          </div>
+          <div class="pred-metric">
+            <span class="pred-metric-label">Emergency</span>
+            <span class="pred-metric-val red">{{ pred.predicted_emergency }}</span>
+          </div>
+          <div class="pred-metric">
+            <span class="pred-metric-label">Pending</span>
+            <span class="pred-metric-val orange">{{ pred.predicted_pending }}</span>
+          </div>
+          <div class="pred-metric">
+            <span class="pred-metric-label">Bed Util</span>
+            <span class="pred-metric-val {% if pred.bed_util_pct >= 90 %}red{% elif pred.bed_util_pct >= 75 %}orange{% else %}green{% endif %}">{{ pred.bed_util_pct }}%</span>
+          </div>
+          <div class="pred-metric">
+            <span class="pred-metric-label">Staff Cov</span>
+            <span class="pred-metric-val {% if pred.staff_coverage_pct < 75 %}red{% elif pred.staff_coverage_pct < 90 %}orange{% else %}green{% endif %}">{{ pred.staff_coverage_pct }}%</span>
+          </div>
+          <div class="pred-metric">
+            <span class="pred-metric-label">Res. Time</span>
+            <span class="pred-metric-val blue">{{ pred.predicted_resolution_hrs }}h</span>
+          </div>
+        </div>
+        <div class="pred-recommendations">
+          <div class="rec-title">Recommendations</div>
+          {% for rec in pred.recommendations %}
+          <div class="rec-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {{ rec }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="chart-card full-width mt-24">
+      <div class="chart-header">
+        <h3>Workload Forecast — Next 3 Days</h3>
+        <span class="chart-badge">Predictive</span>
+      </div>
+      <div class="chart-container tall">
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script>
+  // Pass server-side data to JS
+  const DEPT_STRESS = {{ dept_stress | tojson }};
+  const DEPT_OVERVIEW = {{ dept_overview | tojson }};
+  initDashboard(DEPT_STRESS, DEPT_OVERVIEW);
+</script>
+</body>
+</html>
